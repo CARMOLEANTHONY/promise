@@ -12,7 +12,15 @@ function isPromise(source) {
     return source && isObject(source) && isFunction(source.then)
 }
 
-function resolvePromise(promise, x, resolve, reject, value) {
+function runResolvePromiseWithErrorCapture(promise, onFulfilledOrOnRejected, resolve, reject, valueOrReason) {
+    try {
+        resolvePromise(promise, onFulfilledOrOnRejected(valueOrReason), resolve, reject)
+    } catch (e) {
+        reject(e)
+    }
+}
+
+function resolvePromise(promise, x, resolve, reject) {
     // Can not wait itself.
     if (promise === x) {
         return reject(new TypeError('Chaining cycle detected for promise #<Promise>'))
@@ -21,7 +29,7 @@ function resolvePromise(promise, x, resolve, reject, value) {
     // Aviod calling repeatedly.
     let called = false
 
-    if (x !== null && (isObject(x) || isFunction(x))) {
+    if (x && (isObject(x) || isFunction(x))) {
         try {
             let then = x.then
 
@@ -62,5 +70,6 @@ module.exports = {
     isObject,
     isPromise,
     isFunction,
-    resolvePromise
+    resolvePromise,
+    runResolvePromiseWithErrorCapture
 }

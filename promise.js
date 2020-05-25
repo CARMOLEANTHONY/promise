@@ -9,12 +9,15 @@
  * */
 
 const { PROMISE_STATUS } = require('./constants')
-const { isArray, isPromise, isFunction, resolvePromise } = require('./utils')
+const { isArray, isPromise, isFunction, runResolvePromiseWithErrorCapture } = require('./utils')
 
 
 function Promise(executor) {
+    this.value = undefined
+    this.reason = undefined
 
     this.status = PROMISE_STATUS.PENDING
+
     this.fulfilledCallbacks = []
     this.rejectedCallbacks = []
 
@@ -28,16 +31,13 @@ function Promise(executor) {
     // -----------------------------------------------------------------------------------
 
     function resolve(value) {
-        // In case VALUE is an instance of Promise as well.
-        if (value instanceof Promise) return value.then(resolve, reject)
-
         if (this.status !== PROMISE_STATUS.PENDING) return
 
         this.value = value
         this.status = PROMISE_STATUS.FULFILLED
 
-        // execute fulfilled callbacks in loop.
-        this.fulfilledCallbacks.forEach(fulfilledCallback => fulfilledCallback(this.value))
+        // execute fulfilled callbacks in loop.  
+        setTimeout(() => this.fulfilledCallbacks.forEach(fulfilledCallback => fulfilledCallback(value)), 0)
     }
 
     function reject(reason) {
@@ -47,7 +47,7 @@ function Promise(executor) {
         this.status = PROMISE_STATUS.REJECTED
 
         // execute rejected callbacks in loop.
-        this.rejectedCallbacks.forEach(rejectedCallback => rejectedCallback(this.reason))
+        setTimeout(() => this.rejectedCallbacks.forEach(rejectedCallback => rejectedCallback(reason)), 0)
     }
 }
 
@@ -61,25 +61,17 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
         switch (this.status) {
             case PROMISE_STATUS.FULFILLED:
                 setTimeout(() => {
-                    resolvePromise(promise2, onFulfilled(this.value), resolve, reject)
+                    runResolvePromiseWithErrorCapture(promise2, onFulfilled, resolve, reject, this.value)
                 }, 0)
-
                 break
             case PROMISE_STATUS.REJECTED:
-                try {
-                    onRejected(this.reason)
-                } catch (err) {
-                    reject(err)
-                }
-
+                setTimeout(() => {
+                    runResolvePromiseWithErrorCapture(promise2, onRejected, resolve, reject, this.reason)
+                }, 0)
                 break
             case PROMISE_STATUS.PENDING:
-                this.rejectedCallbacks.push((reason) => {
-                    onRejected(reason)
-                    resolve()
-                })
-
-                this.fulfilledCallbacks.push((value) => resolvePromise(promise2, onFulfilled(value), resolve, reject))
+                this.rejectedCallbacks.push(reason => runResolvePromiseWithErrorCapture(promise2, onRejected, resolve, reject, reason))
+                this.fulfilledCallbacks.push(value => runResolvePromiseWithErrorCapture(promise2, onFulfilled, resolve, reject, value))
         }
     })
 
@@ -100,7 +92,7 @@ Promise.prototype.finally = function (callback) {
 // ----------------------------------------------------------------------------------------------------------------------------------------
 
 Promise.resolve = function (value) {
-    return new Promise(resolve => resolve(value))
+    return value instanceof Promise ? value : new Promise(resolve => resolve(value))
 }
 
 Promise.reject = function (reason) {

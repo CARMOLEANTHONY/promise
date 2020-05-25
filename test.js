@@ -25,7 +25,7 @@ Promise.race([myPromise1, myPromise2]).then(res => {
 
 // catch test
 const myPromise3 = new Promise((resolve, reject) => {
-    setTimeout( () => {
+    setTimeout(() => {
         reject(new Error('error occurred'))
     }, 1000)
 })
@@ -35,7 +35,7 @@ myPromise3.catch(err => {
 }).then(res => {
     console.log(res, 456)
 }, err => {
-    console.log(err, 123) 
+    console.log(err, 123)
 })
 
 // then test
@@ -59,3 +59,6 @@ myPromise4.then(res => {
 myPromise4.then()
     .finally(() => console.log('finally'))
     .then(res => console.log(res)) // 1
+
+
+Promise.resolve(myPromise4).then(res => console.log(res, 'resolve'))
