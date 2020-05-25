@@ -9,7 +9,7 @@
  * */
 
 const { PROMISE_STATUS } = require('./constants')
-const { isArray, isPromise, isFunction, warehousing, resolvePromise } = require('./utils')
+const { isArray, isPromise, isFunction, resolvePromise } = require('./utils')
 
 
 function Promise(executor) {
@@ -66,12 +66,20 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
 
                 break
             case PROMISE_STATUS.REJECTED:
-                reject(err)
+                try {
+                    onRejected(this.reason)
+                } catch (err) {
+                    reject(err)
+                }
 
                 break
             case PROMISE_STATUS.PENDING:
-                warehousing(this.rejectedCallbacks, onRejected)
-                warehousing(this.fulfilledCallbacks, () => resolvePromise(promise2, onFulfilled(this.value), resolve, reject))
+                this.rejectedCallbacks.push((reason) => {
+                    onRejected(reason)
+                    resolve()
+                })
+
+                this.fulfilledCallbacks.push((value) => resolvePromise(promise2, onFulfilled(value), resolve, reject))
         }
     })
 

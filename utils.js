@@ -12,10 +12,6 @@ function isPromise(source) {
     return source && isObject(source) && isFunction(source.then)
 }
 
-function warehousing(stack, callback) {
-    if (stack.indexOf(callback) === -1) stack.push(callback)
-}
-
 function resolvePromise(promise, x, resolve, reject, value) {
     // Can not wait itself.
     if (promise === x) {
@@ -66,6 +62,5 @@ module.exports = {
     isObject,
     isPromise,
     isFunction,
-    warehousing,
     resolvePromise
 }
