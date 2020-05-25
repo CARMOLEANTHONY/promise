@@ -7,12 +7,10 @@ this script only could be executed in Node ENV since we was using require here. 
 ### Test
 we can test whether our implementation follows PromiseA+ by  [promises-aplus-tests](https://www.npmjs.com/package/promises-aplus-tests).
 
-    #### Setup
-
-        * Install promises-aplus-tests globally.
+        - Install promises-aplus-tests globally.
          `npm i promises-aplus-tests -g`
 
-        * Start testing.
+        - Start testing.
          `promises-aplus-tests promise.js`
 
-    Then test cases will be executed on command line.
+Then test cases will be executed on command line.
