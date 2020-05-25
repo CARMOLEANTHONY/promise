@@ -1,21 +1,35 @@
-const isObject = source => Object.prototype.toString.call(source) === '[object Object]'
-const isFunction = source => Object.prototype.toString.call(source) === '[object Function]'
-const isPromise = source => source && isObject(source) && isFunction(source.then)
+const isArray = validateType('Array')
+const isObject = validateType('Object')
+const isFunction = validateType('Function')
 
-const resolvePromise = (promise, x, resolve, reject, value) => {
-    // 不能等待自己完成
+function validateType(type){
+    return function(source){
+        return Object.prototype.toString.call(source) === `[object ${type}]`
+    }
+}
+
+function isPromise(source) {
+    return source && isObject(source) && isFunction(source.then)
+}
+
+function warehousing (stack, callback) {
+    if (stack.indexOf(callback) === -1) stack.push(callback)
+}
+
+function resolvePromise(promise, x, resolve, reject, value) {
+    // Can not wait itself.
     if (promise === x) {
-        return reject(new TypeError('Chaining cycle in promise'))
+        return reject(new TypeError('Chaining cycle detected for promise #<Promise>'))
     }
 
-    // 避免重复调用
+    // Aviod calling repeatedly.
     let called = false
 
-    if (x === undefined) return resolve(value) // 如果onFilfilled()没有return任何东西，resolve上一个promise的value
+    if (x === undefined) return resolve(value) // Resolve previous value if x is undefined.
 
-    if (!isPromise(x)) return resolve(x) // 如果onFilfilled()返回的是一个合法的普通js值直接resolve
+    if (!isPromise(x)) return resolve(x) // Resolve x if x is not a promise(which means x is a legal JS variable like boolean/number/string/object...)
 
-    // 如果如果onFilfilled()返回的是另一个promise，递归执行直至它是一个合法的普通js值
+    // If x is a promise, we recursively call the resolvePromise until it becomes to a legal JS value.
     try {
         const { then } = x
 
@@ -25,7 +39,7 @@ const resolvePromise = (promise, x, resolve, reject, value) => {
                 if (called) return
                 called = true
 
-                resolvePromise(promise, y, resolve, reject)
+                resolvePromise(promise, y, resolve, reject, value)
             },
             r => {
                 if (called) return
@@ -42,9 +56,12 @@ const resolvePromise = (promise, x, resolve, reject, value) => {
 }
 
 
+
 module.exports = {
+    isArray,
     isObject,
     isPromise,
     isFunction,
+    warehousing,
     resolvePromise
 }

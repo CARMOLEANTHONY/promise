@@ -1,12 +1,15 @@
 /** 
- *  PromiseA+ Spec 
+ *  Create a Promise class which should follow PromiseA+ Spec. 
+ *  Note: this script only could be executed in Node ENV since we was using require here.
+ *        You can compile this to ES5 by babel in your app, or declare those variables in this file instead of using require.
  * 
- *  
+ *  @author Carmelo
+ *  @date 2020/5/25 CST
  * 
  * */
 
 const { PROMISE_STATUS } = require('./constants')
-const { isPromise, isFunction, resolvePromise } = require('./utils')
+const { isArray, isPromise, isFunction, warehousing, resolvePromise } = require('./utils')
 
 
 function Promise(executor) {
@@ -15,6 +18,7 @@ function Promise(executor) {
     this.fulfilledCallbacks = []
     this.rejectedCallbacks = []
 
+    //  Using TryCatch to Capture error and then handle it by reject if has.
     try {
         executor(resolve.bind(this), reject.bind(this))
     } catch (err) {
@@ -26,6 +30,7 @@ function Promise(executor) {
     function resolve(value) {
         // In case VALUE is an instance of Promise as well.
         if (value instanceof Promise) return value.then(resolve, reject)
+
         if (this.status !== PROMISE_STATUS.PENDING) return
 
         this.value = value
@@ -39,24 +44,14 @@ function Promise(executor) {
         if (this.status !== PROMISE_STATUS.PENDING) return
 
         this.reason = reason
-        this.status = PROMISE_STATUS.FULFILLED
+        this.status = PROMISE_STATUS.REJECTED
 
         // execute rejected callbacks in loop.
         this.rejectedCallbacks.forEach(rejectedCallback => rejectedCallback(this.reason))
     }
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------
-
-Promise.prototype.isPending = function () {
-    return this.status === PROMISE_STATUS.PENDING
-}
-
-Promise.prototype.warehousing = function (stack, callback) {
-    if (stack.indexOf(callback) === -1) {
-        stack.push(callback)
-    }
-}
+// ---------------------------------------------------------------------------------------------
 
 Promise.prototype.then = function (onFulfilled, onRejected) {
     onFulfilled = isFunction(onFulfilled) ? onFulfilled : data => data
@@ -73,8 +68,8 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
                 onRejected(this.reason)
                 break;
             case PROMISE_STATUS.PENDING:
-                this.warehousing(this.rejectedCallbacks, onRejected)
-                this.warehousing(this.fulfilledCallbacks, () => resolvePromise(promise2, onFulfilled(this.value), resolve, reject, this.value))
+                warehousing(this.rejectedCallbacks, onRejected)
+                warehousing(this.fulfilledCallbacks, () => resolvePromise(promise2, onFulfilled(this.value), resolve, reject, this.value))
         }
     })
 
@@ -102,35 +97,48 @@ Promise.reject = function (reason) {
     return new Promise((resolve, reject) => reject(reason))
 }
 
-Promise.all = function (...promises) {
-    let results;
-    let fulfilledCount = 0
+Promise.all = function (promises) {
+    promises = isArray(promises) ? promises.filter(promise => isPromise(promise)) : []
 
-    promises = promises.filter(promise => isPromise(promise))
-    results = new Array(promises.length)
+    let fulfilledCount = 0
+    let promisesLength = promises.length
+    let results = new Array(promisesLength)
 
     return new Promise((resolve, reject) => {
+        if (promisesLength === 0) return resolve([])
+
         promises.forEach((promise, index) => {
             promise.then(
                 value => {
                     results[index] = value
 
-                    if (++fulfilledCount === promises.length) resolve(results)
+                    if (++fulfilledCount === promisesLength) resolve(results)
                 },
-                err => reject(err))
-
+                err => reject(err)
+            )
         })
     })
 }
 
-Promise.race = function (...promises) {
-    promises = promises.filter(promise => isPromise(promise))
+Promise.race = function (promises) {
+    promises = isArray(promises) ? promises.filter(promise => isPromise(promise)) : []
 
     return new Promise((resolve, reject) => {
         promises.forEach(promise => {
             promise.then(value => resolve(value), err => reject(err))
         })
     })
+}
+
+Promise.defer = Promise.deferred = function () {
+    let dfd = {}
+
+    dfd = new Promise((resolve, reject) => {
+        dfd.resolve = resolve
+        dfd.reject = reject
+    })
+
+    return dfd
 }
 
 module.exports = Promise
