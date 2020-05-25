@@ -1,4 +1,4 @@
-const Promise = require('./promise')
+// const Promise = require('./promise')
 
 const myPromise1 = new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -25,11 +25,17 @@ Promise.race([myPromise1, myPromise2]).then(res => {
 
 // catch test
 const myPromise3 = new Promise((resolve, reject) => {
-    reject(new Error('error occurred'))
+    setTimeout( () => {
+        reject(new Error('error occurred'))
+    }, 1000)
 })
 
 myPromise3.catch(err => {
     console.log(err) // error occurred
+}).then(res => {
+    console.log(res, 456)
+}, err => {
+    console.log(err, 123) 
 })
 
 // then test

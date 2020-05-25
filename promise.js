@@ -61,15 +61,17 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
         switch (this.status) {
             case PROMISE_STATUS.FULFILLED:
                 setTimeout(() => {
-                    resolvePromise(promise2, onFulfilled(this.value), resolve, reject, this.value)
+                    resolvePromise(promise2, onFulfilled(this.value), resolve, reject)
                 }, 0)
-                break;
+
+                break
             case PROMISE_STATUS.REJECTED:
-                onRejected(this.reason)
-                break;
+                reject(err)
+
+                break
             case PROMISE_STATUS.PENDING:
                 warehousing(this.rejectedCallbacks, onRejected)
-                warehousing(this.fulfilledCallbacks, () => resolvePromise(promise2, onFulfilled(this.value), resolve, reject, this.value))
+                warehousing(this.fulfilledCallbacks, () => resolvePromise(promise2, onFulfilled(this.value), resolve, reject))
         }
     })
 
@@ -98,7 +100,7 @@ Promise.reject = function (reason) {
 }
 
 Promise.all = function (promises) {
-    promises = isArray(promises) ? promises.filter(isPromise) : []
+    promises = isArray(promises) ? promises : []
 
     let fulfilledCount = 0
     let promisesLength = promises.length
@@ -108,14 +110,21 @@ Promise.all = function (promises) {
         if (promisesLength === 0) return resolve([])
 
         promises.forEach((promise, index) => {
-            promise.then(
-                value => {
-                    results[index] = value
+            if (isPromise(promise)) {
+                promise.then(
+                    value => {
+                        results[index] = value
 
-                    if (++fulfilledCount === promisesLength) resolve(results)
-                },
-                err => reject(err)
-            )
+                        if (++fulfilledCount === promisesLength) resolve(results)
+                    },
+                    err => reject(err)
+                )
+            } else {
+                results[index] = promise
+
+                if (++fulfilledCount === promisesLength) resolve(results)
+            }
+
         })
     })
 }
@@ -133,7 +142,7 @@ Promise.race = function (promises) {
 Promise.defer = Promise.deferred = function () {
     let dfd = {}
 
-    dfd = new Promise((resolve, reject) => {
+    dfd.promise = new Promise((resolve, reject) => {
         dfd.resolve = resolve
         dfd.reject = reject
     })
