@@ -13,13 +13,13 @@ const myPromise2 = new Promise((resolve, reject) => {
 })
 
 
-Promise.all([]).then(res => {
+Promise.all([myPromise1, myPromise2, 123]).then(res => {
     console.log(res, 'all') // ['success1!!!', 'success2!!!']
 }, err => {
     console.log(err)
 })
 
-Promise.race([]).then(res => {
+Promise.race([myPromise1, myPromise2]).then(res => {
     console.log(res, 'race') // success1!!!
 })
 

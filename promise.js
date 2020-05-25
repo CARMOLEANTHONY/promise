@@ -98,7 +98,7 @@ Promise.reject = function (reason) {
 }
 
 Promise.all = function (promises) {
-    promises = isArray(promises) ? promises.filter(promise => isPromise(promise)) : []
+    promises = isArray(promises) ? promises.filter(isPromise) : []
 
     let fulfilledCount = 0
     let promisesLength = promises.length
@@ -121,7 +121,7 @@ Promise.all = function (promises) {
 }
 
 Promise.race = function (promises) {
-    promises = isArray(promises) ? promises.filter(promise => isPromise(promise)) : []
+    promises = isArray(promises) ? promises.filter(isPromise) : []
 
     return new Promise((resolve, reject) => {
         promises.forEach(promise => {
