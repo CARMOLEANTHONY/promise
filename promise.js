@@ -31,7 +31,7 @@ function Promise(executor) {
     // -----------------------------------------------------------------------------------
 
     function resolve(value) {
-        // If value is a promise, Recursively calling resolve until it become to a legal JS variable instead of promise.
+        // If value is a promise, Recursively calling resolve until it becomes to a legal JS variable instead of promise.
         if (value instanceof Promise) return value.then(resolve.bind(this), reject.bind(this))
 
         if (this.status !== PROMISE_STATUS.PENDING) return
