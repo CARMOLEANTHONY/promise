@@ -60,16 +60,18 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
     onFulfilled = isFunction(onFulfilled) ? onFulfilled : data => data
     onRejected = isFunction(onRejected) ? onRejected : err => { throw err }
 
+    const { status, value, reason } = this
+
     let promise2 = new Promise((resolve, reject) => {
-        switch (this.status) {
+        switch (status) {
             case PROMISE_STATUS.FULFILLED:
                 setTimeout(() => {
-                    runResolvePromiseWithErrorCapture(promise2, onFulfilled, resolve, reject, this.value)
+                    runResolvePromiseWithErrorCapture(promise2, onFulfilled, resolve, reject, value)
                 }, 0)
                 break
             case PROMISE_STATUS.REJECTED:
                 setTimeout(() => {
-                    runResolvePromiseWithErrorCapture(promise2, onRejected, resolve, reject, this.reason)
+                    runResolvePromiseWithErrorCapture(promise2, onRejected, resolve, reject, reason)
                 }, 0)
                 break
             case PROMISE_STATUS.PENDING:
@@ -117,14 +119,12 @@ Promise.all = function (promises) {
                 promise.then(
                     value => {
                         results[index] = value
-
                         if (++fulfilledCount === promisesLength) resolve(results)
                     },
                     err => reject(err)
                 )
             } else {
                 results[index] = promise
-
                 if (++fulfilledCount === promisesLength) resolve(results)
             }
 
